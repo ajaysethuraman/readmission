@@ -1,0 +1,1 @@
+This project leverages machine learning techniques to predict patient readmissions within a specified time frame after discharge. It aims to assist healthcare providers in identifying high-risk patients and implementing preventative measures to improve outcomes.
