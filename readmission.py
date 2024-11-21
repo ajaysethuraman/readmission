@@ -1,101 +1,49 @@
-#!/usr/bin/env python
-# coding: utf-8
-
-# In[1]:
-
-
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 import time
 
-
-# In[2]:
-
-
 df = pd.read_csv('C:/Users/AjayPc/Desktop/diabetic_data.csv')
-
-
-# In[3]:
 
 
 print('number of samples: ', len(df))
 
 
-# In[4]:
-
-
 df.head()
-
-
-# In[5]:
 
 
 df.groupby('readmitted').size()
 
 
-# In[6]:
-
-
 df = df.loc[~df.discharge_disposition_id.isin([11,13,14,19,20,21])]
 
 
-# In[7]:
-
-
 df['OUTPUT_LABEL'] = (df.readmitted == '<30').astype('int')
-
-
-# In[8]:
 
 
 def calc_prevalence(y_actual):
     return (sum(y_actual)/len(y_actual))
 
 
-# In[9]:
-
-
 print('Prevalence:%.3f'%calc_prevalence(df['OUTPUT_LABEL'].values))
-
-
-# In[10]:
 
 
 print('Number of columns:',len(df.columns))
 
 
-# In[11]:
-
-
 df[list(df.columns)[:10]].head()
-
-
-# In[12]:
 
 
 df[list(df.columns)[10:20]].head()
 
 
-# In[13]:
-
-
 df[list(df.columns)[20:30]].head()
-
-
-# In[14]:
 
 
 df[list(df.columns)[30:40]].head()
 
 
-# In[15]:
-
-
 df[list(df.columns)[40:]].head()
-
-
-# In[16]:
 
 
 # for each column
@@ -112,27 +60,15 @@ for c in list(df.columns):
         print(c + ': ' +str(len(n)) + ' unique values')
 
 
-# In[17]:
-
-
 # replace ? with nan
 df = df.replace('?',np.nan)
-
-
-# In[18]:
 
 
 cols_num = ['time_in_hospital','num_lab_procedures', 'num_procedures', 'num_medications',
        'number_outpatient', 'number_emergency', 'number_inpatient','number_diagnoses']
 
 
-# In[19]:
-
-
 df[cols_num].isnull().sum()
-
-
-# In[20]:
 
 
 cols_cat = ['race', 'gender', 
@@ -146,29 +82,14 @@ cols_cat = ['race', 'gender',
        'metformin-pioglitazone', 'change', 'diabetesMed','payer_code']
 
 
-# In[21]:
-
-
 df[cols_cat].isnull().sum()
-
-
-# In[22]:
-
 
 df['race'] = df['race'].fillna('UNK')
 df['payer_code'] = df['payer_code'].fillna('UNK')
 df['medical_specialty'] = df['medical_specialty'].fillna('UNK')
 
-
-# In[23]:
-
-
 print('Number medical specialty:', df.medical_specialty.nunique())
 df.groupby('medical_specialty').size().sort_values(ascending = False)
-
-
-# In[24]:
-
 
 top_10 = ['UNK','InternalMedicine','Emergency/Trauma',          'Family/GeneralPractice', 'Cardiology','Surgery-General' ,          'Nephrology','Orthopedics',          'Orthopedics-Reconstructive','Radiologist']
 
@@ -179,58 +100,24 @@ df['med_spec'] = df['medical_specialty'].copy()
 df.loc[~df.med_spec.isin(top_10),'med_spec'] = 'Other'
 
 
-# In[25]:
-
-
 df.groupby('med_spec').size()
-
-
-# In[26]:
-
 
 cols_cat_num = ['admission_type_id', 'discharge_disposition_id', 'admission_source_id']
 
 df[cols_cat_num] = df[cols_cat_num].astype('str')
 
-
-# In[27]:
-
-
 df_cat = pd.get_dummies(df[cols_cat + cols_cat_num + ['med_spec']],drop_first = True)
-
-
-# In[28]:
 
 
 df_cat.head()
 
-
-# In[29]:
-
-
 df = pd.concat([df,df_cat], axis = 1)
-
-
-# In[30]:
-
 
 cols_all_cat = list(df_cat.columns)
 
-
-# In[31]:
-
-
 df[['age', 'weight']].head()
 
-
-# In[32]:
-
-
 df.groupby('age').size()
-
-
-# In[33]:
-
 
 age_id = {'[0-10)':0, 
           '[10-20)':10, 
@@ -245,25 +132,12 @@ age_id = {'[0-10)':0,
 df['age_group'] = df.age.replace(age_id)
 
 
-# In[34]:
-
-
 df.weight.notnull().sum()
-
-
-# In[35]:
 
 
 df['has_weight'] = df.weight.notnull().astype('int')
 
-
-# In[36]:
-
-
 cols_extra = ['age_group','has_weight']
-
-
-# In[37]:
 
 
 print('Total number of features:', len(cols_num + cols_all_cat + cols_extra))
@@ -272,28 +146,15 @@ print('Categorical Features:',len(cols_all_cat))
 print('Extra features:',len(cols_extra))
 
 
-# In[38]:
-
-
 df[cols_num + cols_all_cat + cols_extra].isnull().sum().sort_values(ascending = False).head(10)
-
-
-# In[39]:
 
 
 col2use = cols_num + cols_all_cat + cols_extra
 df_data = df[col2use + ['OUTPUT_LABEL']]
 
-
-# In[40]:
-
-
 # shuffle the samples
 df_data = df_data.sample(n = len(df_data), random_state = 42)
 df_data = df_data.reset_index(drop = True)
-
-
-# In[41]:
 
 
 # Save 30% of the data as validation and test data 
@@ -301,36 +162,20 @@ df_valid_test=df_data.sample(frac=0.30,random_state=42)
 print('Split size: %.3f'%(len(df_valid_test)/len(df_data)))
 
 
-# In[42]:
-
-
 df_test = df_valid_test.sample(frac = 0.5, random_state = 42)
 df_valid = df_valid_test.drop(df_test.index)
-
-
-# In[43]:
 
 
 # use the rest of the data as training data
 df_train_all=df_data.drop(df_valid_test.index)
 
 
-# In[44]:
-
-
 print('Test prevalence(n = %d):%.3f'%(len(df_test),calc_prevalence(df_test.OUTPUT_LABEL.values)))
 print('Valid prevalence(n = %d):%.3f'%(len(df_valid),calc_prevalence(df_valid.OUTPUT_LABEL.values)))
 print('Train all prevalence(n = %d):%.3f'%(len(df_train_all), calc_prevalence(df_train_all.OUTPUT_LABEL.values)))
 
-
-# In[45]:
-
-
 print('all samples (n = %d)'%len(df_data))
 assert len(df_data) == (len(df_test)+len(df_valid)+len(df_train_all)),'math didnt work'
-
-
-# In[46]:
 
 
 # split the training data into positive and negative
@@ -347,17 +192,10 @@ df_train = df_train.sample(n = len(df_train), random_state = 42).reset_index(dro
 print('Train balanced prevalence(n = %d):%.3f'%(len(df_train), calc_prevalence(df_train.OUTPUT_LABEL.values)))
 
 
-# In[47]:
-
-
 df_train_all.to_csv('df_train_all.csv',index=False)
 df_train.to_csv('df_train.csv',index=False)
 df_valid.to_csv('df_valid.csv',index=False)
 df_test.to_csv('df_test.csv',index=False)
-
-
-# In[48]:
-
 
 X_train = df_train[col2use].values
 X_train_all = df_train_all[col2use].values
@@ -371,16 +209,10 @@ print('Training shapes:',X_train.shape, y_train.shape)
 print('Validation shapes:',X_valid.shape, y_valid.shape)
 
 
-# In[49]:
-
-
 from sklearn.preprocessing import StandardScaler
 
 scaler  = StandardScaler()
 scaler.fit(X_train_all)
-
-
-# In[50]:
 
 
 import pickle
@@ -388,22 +220,11 @@ scalerfile = 'scaler.sav'
 pickle.dump(scaler, open(scalerfile, 'wb'))
 
 
-# In[51]:
-
-
 # load it back
 scaler = pickle.load(open(scalerfile, 'rb'))
 
-
-# In[52]:
-
-
 X_train_tf = scaler.transform(X_train)
 X_valid_tf = scaler.transform(X_valid)
-
-
-# In[53]:
-
 
 from sklearn.metrics import roc_auc_score, accuracy_score, precision_score, recall_score
 def calc_specificity(y_actual, y_pred, thresh):
@@ -427,22 +248,12 @@ def print_report(y_actual, y_pred, thresh):
     return auc, accuracy, recall, precision, specificity
 
 
-# In[54]:
-
-
 thresh = 0.5
-
-
-# In[55]:
-
 
 # k-nearest neighbors
 from sklearn.neighbors import KNeighborsClassifier
 knn=KNeighborsClassifier(n_neighbors = 100)
 knn.fit(X_train_tf, y_train)
-
-
-# In[56]:
 
 
 y_train_preds = knn.predict_proba(X_train_tf)[:,1]
@@ -455,16 +266,11 @@ print('Validation:')
 knn_valid_auc, knn_valid_accuracy, knn_valid_recall,     knn_valid_precision, knn_valid_specificity = print_report(y_valid,y_valid_preds, thresh)
 
 
-# In[57]:
-
-
 # logistic regression
 from sklearn.linear_model import LogisticRegression
 lr=LogisticRegression(random_state = 42)
 lr.fit(X_train_tf, y_train)
 
-
-# In[58]:
 
 
 y_train_preds = lr.predict_proba(X_train_tf)[:,1]
@@ -477,15 +283,9 @@ print('Validation:')
 lr_valid_auc, lr_valid_accuracy, lr_valid_recall,     lr_valid_precision, lr_valid_specificity = print_report(y_valid,y_valid_preds, thresh)
 
 
-# In[59]:
-
-
 from sklearn.linear_model import SGDClassifier
 sgdc=SGDClassifier(loss = 'log',alpha = 0.1,random_state = 42)
 sgdc.fit(X_train_tf, y_train)
-
-
-# In[60]:
 
 
 y_train_preds = sgdc.predict_proba(X_train_tf)[:,1]
@@ -498,17 +298,10 @@ print('Validation:')
 sgdc_valid_auc, sgdc_valid_accuracy, sgdc_valid_recall, sgdc_valid_precision, sgdc_valid_specificity = print_report(y_valid,y_valid_preds, thresh)
 
 
-# In[61]:
-
-
 from sklearn.naive_bayes import GaussianNB
 
 nb = GaussianNB()
 nb.fit(X_train_tf, y_train)
-
-
-# In[62]:
-
 
 y_train_preds = nb.predict_proba(X_train_tf)[:,1]
 y_valid_preds = nb.predict_proba(X_valid_tf)[:,1]
@@ -519,18 +312,10 @@ nb_train_auc, nb_train_accuracy, nb_train_recall, nb_train_precision, nb_train_s
 print('Validation:')
 nb_valid_auc, nb_valid_accuracy, nb_valid_recall, nb_valid_precision, nb_valid_specificity = print_report(y_valid,y_valid_preds, thresh)
 
-
-# In[63]:
-
-
 from sklearn.tree import DecisionTreeClassifier
 
 tree = DecisionTreeClassifier(max_depth = 10, random_state = 42)
 tree.fit(X_train_tf, y_train)
-
-
-# In[64]:
-
 
 y_train_preds = tree.predict_proba(X_train_tf)[:,1]
 y_valid_preds = tree.predict_proba(X_valid_tf)[:,1]
@@ -542,15 +327,9 @@ print('Validation:')
 tree_valid_auc, tree_valid_accuracy, tree_valid_recall, tree_valid_precision, tree_valid_specificity = print_report(y_valid,y_valid_preds, thresh)
 
 
-# In[65]:
-
-
 from sklearn.ensemble import RandomForestClassifier
 rf=RandomForestClassifier(max_depth = 6, random_state = 42)
 rf.fit(X_train_tf, y_train)
-
-
-# In[66]:
 
 
 y_train_preds = rf.predict_proba(X_train_tf)[:,1]
@@ -562,17 +341,10 @@ rf_train_auc, rf_train_accuracy, rf_train_recall, rf_train_precision, rf_train_s
 print('Validation:')
 rf_valid_auc, rf_valid_accuracy, rf_valid_recall, rf_valid_precision, rf_valid_specificity = print_report(y_valid,y_valid_preds, thresh)
 
-
-# In[67]:
-
-
 from sklearn.ensemble import GradientBoostingClassifier
 gbc =GradientBoostingClassifier(n_estimators=100, learning_rate=1.0,
      max_depth=3, random_state=42)
 gbc.fit(X_train_tf, y_train)
-
-
-# In[68]:
 
 
 y_train_preds = gbc.predict_proba(X_train_tf)[:,1]
@@ -584,10 +356,6 @@ gbc_train_auc, gbc_train_accuracy, gbc_train_recall, gbc_train_precision, gbc_tr
 print('Validation:')
 gbc_valid_auc, gbc_valid_accuracy, gbc_valid_recall, gbc_valid_precision, gbc_valid_specificity = print_report(y_valid,y_valid_preds, thresh)
 
-
-# In[69]:
-
-
 df_results = pd.DataFrame({'classifier':['KNN','KNN','LR','LR','SGD','SGD','NB','NB','DT','DT','RF','RF','GB','GB'],
                            'data_set':['train','valid']*7,
                           'auc':[knn_train_auc, knn_valid_auc,lr_train_auc,lr_valid_auc,sgdc_train_auc,sgdc_valid_auc,nb_train_auc,nb_valid_auc,tree_train_auc,tree_valid_auc,rf_train_auc,rf_valid_auc,gbc_valid_auc,gbc_valid_auc,],
@@ -597,16 +365,9 @@ df_results = pd.DataFrame({'classifier':['KNN','KNN','LR','LR','SGD','SGD','NB',
                           'specificity':[knn_train_specificity, knn_valid_specificity,lr_train_specificity,lr_valid_specificity,sgdc_train_specificity,sgdc_valid_specificity,nb_train_specificity,nb_valid_specificity,tree_train_specificity,tree_valid_specificity,rf_train_specificity,rf_valid_specificity,gbc_valid_specificity,gbc_valid_specificity,]})
 
 
-# In[70]:
-
-
 import seaborn as sns
 import matplotlib.pyplot as plt
 sns.set(style="darkgrid")
-
-
-# In[71]:
-
 
 ax = sns.barplot(x="classifier", y="auc", hue="data_set", data=df_results)
 ax.set_xlabel('Classifier',fontsize = 15)
@@ -616,11 +377,6 @@ ax.tick_params(labelsize=15)
 # Put the legend out of the figure
 plt.legend(bbox_to_anchor=(1.05, 1), loc=2, borderaxespad=0., fontsize = 15)
 plt.show()
-
-
-# In[72]:
-
-
 
 import numpy as np
 from sklearn.model_selection import learning_curve
@@ -695,10 +451,6 @@ def plot_learning_curve(estimator, title, X, y, ylim=None, cv=None,
     plt.legend(loc="best")
     return plt
 
-
-# In[73]:
-
-
 title = "Learning Curves (Random Forest)"
 # Cross validation with 5 iterations to get smoother mean test and train
 # score curves, each time with 20% data randomly selected as a validation set.
@@ -708,17 +460,10 @@ plot_learning_curve(estimator, title, X_train_tf, y_train, ylim=(0.2, 1.01), cv=
 
 plt.show()
 
-
-# In[74]:
-
-
 feature_importances = pd.DataFrame(lr.coef_[0],
                                    index = col2use,
                                     columns=['importance']).sort_values('importance',
                                                                         ascending=False) 
-
-
-# In[75]:
 
 
 num = 50
@@ -736,9 +481,6 @@ plt.yticks(ylocs, feature_labels)
 plt.show()
 
 
-# In[76]:
-
-
 values_to_plot = feature_importances.iloc[-num:].values.ravel()
 feature_labels = list(feature_importances.iloc[-num:].index)
 
@@ -751,16 +493,10 @@ plt.yticks(ylocs, feature_labels)
 plt.show()
 
 
-# In[77]:
-
-
 feature_importances = pd.DataFrame(rf.feature_importances_,
                                    index = col2use,
                                     columns=['importance']).sort_values('importance',
                                                                         ascending=False)
-
-
-# In[78]:
 
 
 num = 50
@@ -778,14 +514,7 @@ plt.yticks(ylocs, feature_labels)
 plt.show()
 
 
-# In[79]:
-
-
 rf.get_params()
-
-
-# In[80]:
-
 
 from sklearn.model_selection import RandomizedSearchCV
 
@@ -811,24 +540,13 @@ random_grid = {'n_estimators':n_estimators,
 print(random_grid)
 
 
-# In[81]:
-
-
 from sklearn.metrics import make_scorer, roc_auc_score
 auc_scoring = make_scorer(roc_auc_score)
-
-
-# In[82]:
-
 
 # create the randomized search cross-validation
 rf_random = RandomizedSearchCV(estimator = rf, param_distributions = random_grid, 
                                n_iter = 20, cv = 2, scoring=auc_scoring,
                                verbose = 1, random_state = 42)
-
-
-# In[83]:
-
 
 # fit the random search model (this will take a few minutes)
 t1 = time.time()
@@ -836,15 +554,7 @@ rf_random.fit(X_train_tf, y_train)
 t2 = time.time()
 print(t2-t1)
 
-
-# In[84]:
-
-
 rf_random.best_params_
-
-
-# In[85]:
-
 
 y_train_preds = rf.predict_proba(X_train_tf)[:,1]
 y_valid_preds = rf.predict_proba(X_valid_tf)[:,1]
@@ -867,8 +577,6 @@ print('Training AUC:%.3f'%(rf_train_auc))
 print('Validation AUC:%.3f'%(rf_valid_auc))
 
 
-# In[86]:
-
 
 penalty = ['none','l2','l1']
 max_iter = range(100,500,100)
@@ -887,14 +595,7 @@ t2 = time.time()
 print(t2-t1)
 
 
-# In[87]:
-
-
 sgdc_random.best_params_
-
-
-# In[88]:
-
 
 y_train_preds = sgdc.predict_proba(X_train_tf)[:,1]
 y_valid_preds = sgdc.predict_proba(X_valid_tf)[:,1]
@@ -913,9 +614,6 @@ sgdc_valid_auc = roc_auc_score(y_valid, y_valid_preds_random)
 
 print('Training AUC:%.3f'%(sgdc_train_auc))
 print('Validation AUC:%.3f'%(sgdc_valid_auc))
-
-
-# In[89]:
 
 
 # number of trees
@@ -943,16 +641,7 @@ gbc_random.fit(X_train_tf, y_train)
 t2 = time.time()
 print(t2-t1)
 
-
-# In[90]:
-
-
 gbc_random.best_params_
-
-
-# In[91]:
-
-
 y_train_preds = gbc.predict_proba(X_train_tf)[:,1]
 y_valid_preds = gbc.predict_proba(X_valid_tf)[:,1]
 
@@ -972,20 +661,12 @@ gbc_valid_auc = roc_auc_score(y_valid, y_valid_preds_random)
 print('Training AUC:%.3f'%(gbc_train_auc))
 print('Validation AUC:%.3f'%(gbc_valid_auc))
 
-
-# In[92]:
-
-
 df_results = pd.DataFrame({'classifier':['SGD','SGD','RF','RF','GB','GB'],
                            'data_set':['base','optimized']*3,
                           'auc':[sgdc_valid_auc_base,sgdc_valid_auc,
                                  rf_valid_auc_base,rf_valid_auc,
                                  gbc_valid_auc_base,gbc_valid_auc,],
                           })
-
-
-# In[93]:
-
 
 ax = sns.barplot(x="classifier", y="auc", hue="data_set", data=df_results)
 ax.set_xlabel('Classifier',fontsize = 15)
@@ -996,15 +677,7 @@ plt.legend(bbox_to_anchor=(1.05, 1), loc=2, borderaxespad=0., fontsize = 15)
 
 plt.show()
 
-
-# In[94]:
-
-
 pickle.dump(gbc_random.best_estimator_, open('best_classifier.pkl', 'wb'),protocol = 4)
-
-
-# In[95]:
-
 
 X_test = df_test[col2use].values
 y_test = df_test['OUTPUT_LABEL'].values
@@ -1013,22 +686,11 @@ scaler = pickle.load(open('scaler.sav', 'rb'))
 X_test_tf = scaler.transform(X_test)
 
 
-# In[96]:
-
-
 best_model = pickle.load(open('best_classifier.pkl','rb'))
-
-
-# In[97]:
-
 
 y_train_preds = best_model.predict_proba(X_train_tf)[:,1]
 y_valid_preds = best_model.predict_proba(X_valid_tf)[:,1]
 y_test_preds = best_model.predict_proba(X_test_tf)[:,1]
-
-
-# In[98]:
-
 
 thresh = 0.5
 
@@ -1038,9 +700,6 @@ print('Validation:')
 valid_auc, valid_accuracy, valid_recall, valid_precision, valid_specificity = print_report(y_valid,y_valid_preds, thresh)
 print('Test:')
 test_auc, test_accuracy, test_recall, test_precision, test_specificity = print_report(y_test,y_test_preds, thresh)
-
-
-# In[99]:
 
 
 from sklearn.metrics import roc_curve 
